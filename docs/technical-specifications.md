@@ -223,6 +223,138 @@ pnpm test
 
 ---
 
+## 🚀 Why Turborepo Over Direct PNPM?
+
+This project's **multi-target architecture** (Electron + Web) with shared packages creates complex build dependencies that require sophisticated orchestration. While PNPM provides excellent workspace management, **Turborepo** adds the intelligent build coordination essential for this architecture:
+
+### 🏎️ Performance Benefits
+
+| Feature | PNPM Only | PNPM + Turborepo |
+|---------|-----------|------------------|
+| **Incremental Builds** | Manual script coordination | Automatic dependency-aware builds |
+| **Caching** | No built-in caching | Intelligent local + remote caching |
+| **Parallelization** | Limited to `--parallel` flag | Smart parallel execution with dependency graphs |
+| **Change Detection** | Rebuilds everything | Only rebuilds affected packages |
+
+### 🎯 Multi-Target Build Coordination
+
+This project requires building for **two distinct runtime targets** with shared dependencies:
+
+```bash
+# Without Turborepo: Manual coordination required
+pnpm --filter shared build
+pnpm --filter ui build
+pnpm --filter backend-web build
+pnpm --filter backend-electron build
+pnpm --filter web-app build        # Web target
+pnpm --filter electron-app build   # Electron target
+
+# With Turborepo: Intelligent orchestration
+turbo run build  # Builds both targets optimally
+```
+
+**Smart Pipeline Benefits:**
+- **Shared packages** (`shared`, `ui`) built once, used by both targets
+- **Backend implementations** built in parallel (no interdependency)
+- **Target applications** built simultaneously after dependencies ready
+- **Incremental builds**: Only rebuilds packages when source or dependencies change
+
+### 🧠 Intelligent Dependency Management
+
+Turborepo automatically analyzes the complex dependency graph:
+```
+shared ──┬─→ ui ──┬─→ web-app
+         │        └─→ electron-app  
+         ├─→ backend-web ──┘
+         └─→ backend-electron ──┘
+```
+
+**Execution Strategy:**
+1. **Level 1**: Build `shared` (foundation)
+2. **Level 2**: Build `ui`, `backend-web`, `backend-electron` in parallel
+3. **Level 3**: Build `web-app` and `electron-app` in parallel
+
+### 💾 Advanced Caching Strategy
+
+#### Local Caching
+- **Input hashing**: Caches based on source files, dependencies, and environment
+- **Output restoration**: Instantly restores previous build artifacts
+- **Cache invalidation**: Smart cache busting when inputs change
+
+#### Remote Caching (Future)
+- **Team collaboration**: Share build cache across development team
+- **CI/CD optimization**: Dramatically faster builds in continuous integration
+- **Distributed builds**: Scale builds across multiple machines
+
+### 🔄 Complex Task Orchestration
+
+The monorepo requires sophisticated task coordination:
+
+```json
+{
+  "build:prod": {
+    "dependsOn": ["^build", "type-check", "lint"],
+    "outputs": ["dist/**", "build/**", "release/**"],
+    "env": ["NODE_ENV", "VITE_*", "ELECTRON_*"]
+  }
+}
+```
+
+This ensures:
+1. All dependencies are built first (`^build`)
+2. Code quality gates pass (`type-check`, `lint`)
+3. Environment variables are considered for cache keys
+4. Outputs are properly tracked for caching
+
+### 📊 Developer Experience Improvements
+
+| Aspect | PNPM Scripts | Turborepo |
+|--------|-------------|-----------|
+| **Error Handling** | Stops on first failure | Continues building unaffected packages |
+| **Progress Visibility** | Limited output | Rich progress indicators and timing |
+| **Selective Execution** | Manual filtering | Automatic affected package detection |
+| **Debugging** | Difficult to trace issues | Clear dependency visualization |
+
+### 🔧 Multi-Target Architecture Challenges Solved
+
+1. **Cross-Platform Builds**: Coordinates Electron and Web builds with shared dependencies
+2. **Smart Incremental Builds**: Only rebuilds packages when source or dependencies change
+3. **Parallel Target Compilation**: Builds both runtime targets simultaneously when possible
+4. **Dependency Synchronization**: Ensures shared packages are built before target applications
+5. **Development Efficiency**: Instant rebuilds during development when only one target is affected
+6. **Testing Coordination**: Runs tests across all packages in dependency order
+
+### 📈 Smart Pipeline Examples
+
+**Development Scenario**: Changing only UI components
+```bash
+# Only rebuilds affected packages
+turbo run build  # Skips backend-*, rebuilds ui → web-app + electron-app
+```
+
+**Backend Change**: Modifying Electron backend only
+```bash
+# Smart targeting
+turbo run build  # Skips web-app, rebuilds backend-electron → electron-app
+```
+
+**Shared Type Change**: Updating shared interfaces
+```bash
+# Full rebuild cascade
+turbo run build  # Rebuilds everything dependent on shared
+```
+
+**Production Builds**: Different targets, same efficiency
+```bash
+turbo run build:prod --filter=web-app      # Web production only
+turbo run build:prod --filter=electron-app # Electron production only  
+turbo run build:prod                       # Both targets optimally
+```
+
+
+
+---
+
 ## ⚙️ Workspace Configuration
 
 ### `pnpm-workspace.yaml`
