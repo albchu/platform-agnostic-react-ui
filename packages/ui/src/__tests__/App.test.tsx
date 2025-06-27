@@ -1,0 +1,116 @@
+import React from 'react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { AppProvider, App } from '../index';
+import { BackendAPI, Action, AppState, StateSubscription } from '@workspace/shared';
+
+// Mock backend for testing
+class MockBackend implements BackendAPI {
+  private state: AppState = { counter: 0 };
+  private listeners = new Map<keyof AppState, Set<(value: any) => void>>();
+
+  constructor() {
+    Object.keys(this.state).forEach(key => {
+      this.listeners.set(key as keyof AppState, new Set());
+    });
+  }
+
+  async dispatch(action: Action): Promise<void> {
+    switch (action.type) {
+      case 'incrementCounter':
+        this.state = { ...this.state, counter: this.state.counter + 1 };
+        this.notifyListeners('counter', this.state.counter);
+        break;
+      case 'resetApp':
+        this.state = { counter: 0 };
+        this.notifyListeners('counter', this.state.counter);
+        break;
+    }
+  }
+
+  select<K extends keyof AppState>(key: K): StateSubscription<AppState[K]> {
+    return {
+      async getValue() {
+        return this.state[key];
+      },
+      subscribe: (callback: (value: AppState[K]) => void) => {
+        const listeners = this.listeners.get(key);
+        if (listeners) {
+          listeners.add(callback);
+          return () => listeners.delete(callback);
+        }
+        return () => {};
+      }
+    };
+  }
+
+  async getState(): Promise<AppState> {
+    return { ...this.state };
+  }
+
+  private notifyListeners<K extends keyof AppState>(key: K, value: AppState[K]): void {
+    const listeners = this.listeners.get(key);
+    if (listeners) {
+      listeners.forEach(listener => listener(value));
+    }
+  }
+}
+
+describe('App', () => {
+  it('renders counter and buttons', async () => {
+    const mockBackend = new MockBackend();
+    
+    render(
+      <AppProvider backend={mockBackend}>
+        <App />
+      </AppProvider>
+    );
+
+    expect(screen.getByText('🚀 Platform-Agnostic React UI')).toBeInTheDocument();
+    expect(screen.getByText(/Counter value:/)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Increment/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Reset/ })).toBeInTheDocument();
+  });
+
+  it('increments counter when increment button is clicked', async () => {
+    const mockBackend = new MockBackend();
+    
+    render(
+      <AppProvider backend={mockBackend}>
+        <App />
+      </AppProvider>
+    );
+
+    const incrementButton = screen.getByRole('button', { name: /Increment/ });
+    fireEvent.click(incrementButton);
+
+    await waitFor(() => {
+      expect(screen.getByText(/Counter value: 1/)).toBeInTheDocument();
+    });
+  });
+
+  it('resets counter when reset button is clicked', async () => {
+    const mockBackend = new MockBackend();
+    
+    render(
+      <AppProvider backend={mockBackend}>
+        <App />
+      </AppProvider>
+    );
+
+    // First increment
+    const incrementButton = screen.getByRole('button', { name: /Increment/ });
+    fireEvent.click(incrementButton);
+
+    await waitFor(() => {
+      expect(screen.getByText(/Counter value: 1/)).toBeInTheDocument();
+    });
+
+    // Then reset
+    const resetButton = screen.getByRole('button', { name: /Reset/ });
+    fireEvent.click(resetButton);
+
+    await waitFor(() => {
+      expect(screen.getByText(/Counter value: 0/)).toBeInTheDocument();
+    });
+  });
+}); 
