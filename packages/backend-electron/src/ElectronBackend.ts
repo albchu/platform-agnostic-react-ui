@@ -1,10 +1,11 @@
 import { EventEmitter } from 'events';
 import { ipcMain } from 'electron';
 import type { AppState, Action } from '@workspace/shared';
+import { INITIAL_STATE } from '@workspace/shared';
 
 export class ElectronBackend extends EventEmitter {
   private state: AppState = {
-    counter: 0
+    ...INITIAL_STATE
   };
 
   constructor() {
@@ -62,7 +63,7 @@ export class ElectronBackend extends EventEmitter {
 
       case 'resetApp':
         this.state = {
-          counter: 0
+          ...INITIAL_STATE
         };
         this.emit('state-change:counter', this.state.counter);
         break;

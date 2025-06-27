@@ -1,5 +1,6 @@
 import { useCallback, useRef, useState, useEffect } from 'react';
 import type { AppState, Action, BackendAPI, StateSubscription } from '@workspace/shared';
+import { INITIAL_STATE } from '@workspace/shared';
 
 type StateListener<T> = (value: T) => void;
 
@@ -21,7 +22,7 @@ class WebStateSubscription<T> implements StateSubscription<T> {
 // React hook-based web backend implementation
 export function useWebBackend(): BackendAPI {
   const [state, setState] = useState<AppState>({
-    counter: 0
+    ...INITIAL_STATE
   });
 
   const listenersRef = useRef(new Map<keyof AppState, Set<StateListener<AppState[keyof AppState]>>>());
@@ -58,7 +59,7 @@ export function useWebBackend(): BackendAPI {
 
       case 'resetApp':
         setState(() => {
-          const newState = { counter: 0 };
+          const newState = { ...INITIAL_STATE };
           // Notify listeners after state update
           setTimeout(() => notifyListeners('counter', newState.counter), 0);
           return newState;

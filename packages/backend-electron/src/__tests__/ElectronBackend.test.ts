@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { ElectronBackend } from '../ElectronBackend';
+import { INITIAL_STATE } from '@workspace/shared';
 
 // Mock electron modules
 vi.mock('electron', () => ({
@@ -27,7 +28,7 @@ describe('ElectronBackend', () => {
 
   it('should initialize with default state', () => {
     const state = backend.getState();
-    expect(state).toEqual({ counter: 0 });
+    expect(state).toEqual(INITIAL_STATE);
   });
 
   it('should be an EventEmitter', () => {

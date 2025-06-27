@@ -3,10 +3,11 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { AppProvider } from '../AppProvider';
 import { App } from '../App';
 import type { BackendAPI, StateSubscription, Action, AppState } from '@workspace/shared';
+import { INITIAL_STATE } from '@workspace/shared';
 
 // Mock backend for testing
 class MockBackend implements BackendAPI {
-  private state: AppState = { counter: 0 };
+  private state: AppState = { ...INITIAL_STATE };
   private listeners = new Map<keyof AppState, Set<(value: any) => void>>();
 
   constructor() {
@@ -22,7 +23,7 @@ class MockBackend implements BackendAPI {
         this.notifyListeners('counter', this.state.counter);
         break;
       case 'resetApp':
-        this.state = { counter: 0 };
+        this.state = { ...INITIAL_STATE };
         this.notifyListeners('counter', this.state.counter);
         break;
     }

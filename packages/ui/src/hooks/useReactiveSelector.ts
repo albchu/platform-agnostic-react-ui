@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { AppState } from '@workspace/shared';
+import { INITIAL_STATE } from '@workspace/shared';
 import { useBackend } from './useBackend';
 
 export function useReactiveSelector<K extends keyof AppState>(
@@ -22,10 +23,8 @@ export function useReactiveSelector<K extends keyof AppState>(
 
   // Return a default value while loading
   if (value === undefined) {
-    // Return appropriate default based on key
-    if (key === 'counter') return 0 as AppState[K];
-    // For other keys, we need to handle them appropriately
-    throw new Error(`No default value defined for key: ${key}`);
+    // Return the initial state value for this key
+    return INITIAL_STATE[key];
   }
 
   return value;

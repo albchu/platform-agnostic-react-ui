@@ -1,13 +1,14 @@
 import { renderHook, act } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import { useWebBackend } from '../WebBackend';
+import { INITIAL_STATE } from '@workspace/shared';
 
 describe('useWebBackend', () => {
   it('initializes with default state', async () => {
     const { result } = renderHook(() => useWebBackend());
     
     const state = await result.current.getState();
-    expect(state).toEqual({ counter: 0 });
+    expect(state).toEqual(INITIAL_STATE);
   });
 
   it('handles incrementCounter action', async () => {
