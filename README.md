@@ -46,6 +46,12 @@ This project demonstrates a **pluggable backend architecture** where:
     └────────────┘    └───────────────┘
 ```
 
+## 🎬 **Demo Video**
+
+🎥 **[Watch Setup Demo](https://drive.google.com/file/d/1FjGDfwAWrV8IZBr2eysPGmHR1BwnSi4_/view?usp=sharing)** - *See how to create a new project from this template in under 5 minutes*
+
+> **Note**: Click the link above to watch the demo video showing the complete setup process.
+
 ## 🚀 Quick Start
 
 ### Using as Template
