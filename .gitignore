@@ -134,3 +134,9 @@ dist
 .yarn/build-state.yml
 .yarn/install-state.gz
 .pnp.*
+
+# Turborepo
+.turbo
+
+# Turborepo cache directory
+node_modules/.cache/turbo
