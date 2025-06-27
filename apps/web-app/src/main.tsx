@@ -1,15 +1,23 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { AppProvider, App } from '@workspace/ui';
-import { WebBackend } from '@workspace/backend-web';
+import { WebBackendProvider, useWebBackendContext } from '@workspace/backend-web';
 
-// Create web backend instance
-const webBackend = new WebBackend();
+// Component that bridges the web backend to the UI
+function AppWithWebBackend() {
+  const backend = useWebBackendContext();
+  
+  return (
+    <AppProvider backend={backend}>
+      <App />
+    </AppProvider>
+  );
+}
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <AppProvider backend={webBackend}>
-      <App />
-    </AppProvider>
+    <WebBackendProvider>
+      <AppWithWebBackend />
+    </WebBackendProvider>
   </React.StrictMode>
 ); 

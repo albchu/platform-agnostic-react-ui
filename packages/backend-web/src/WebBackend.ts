@@ -1,3 +1,4 @@
+import { useCallback, useRef, useState, useEffect } from 'react';
 import { AppState, Action, BackendAPI, StateSubscription } from '@workspace/shared';
 
 type StateListener<T> = (value: T) => void;
@@ -17,47 +18,63 @@ class WebStateSubscription<T> implements StateSubscription<T> {
   }
 }
 
-export class WebBackend implements BackendAPI {
-  private state: AppState = {
+// React hook-based web backend implementation
+export function useWebBackend(): BackendAPI {
+  const [state, setState] = useState<AppState>({
     counter: 0
-  };
+  });
 
-  private listeners = new Map<keyof AppState, Set<StateListener<any>>>();
+  const listenersRef = useRef(new Map<keyof AppState, Set<StateListener<AppState[keyof AppState]>>>());
 
-  constructor() {
-    // Initialize listener sets for each state key
-    Object.keys(this.state).forEach(key => {
-      this.listeners.set(key as keyof AppState, new Set());
+  // Initialize listeners on first render
+  useEffect(() => {
+    Object.keys(state).forEach(key => {
+      if (!listenersRef.current.has(key as keyof AppState)) {
+        listenersRef.current.set(key as keyof AppState, new Set());
+      }
     });
-  }
+  }, [state]);
 
-  async dispatch(action: Action): Promise<void> {
+  const notifyListeners = useCallback(<K extends keyof AppState>(key: K, value: AppState[K]): void => {
+    const listeners = listenersRef.current.get(key);
+    if (listeners) {
+      listeners.forEach((listener: StateListener<AppState[K]>) => listener(value));
+    }
+  }, []);
+
+  const dispatch = useCallback(async (action: Action): Promise<void> => {
     switch (action.type) {
       case 'incrementCounter':
-        this.state = {
-          ...this.state,
-          counter: this.state.counter + 1
-        };
-        this.notifyListeners('counter', this.state.counter);
+        setState((prevState: AppState) => {
+          const newState = {
+            ...prevState,
+            counter: prevState.counter + 1
+          };
+          // Notify listeners after state update
+          setTimeout(() => notifyListeners('counter', newState.counter), 0);
+          return newState;
+        });
         break;
 
       case 'resetApp':
-        this.state = {
-          counter: 0
-        };
-        this.notifyListeners('counter', this.state.counter);
+        setState(() => {
+          const newState = { counter: 0 };
+          // Notify listeners after state update
+          setTimeout(() => notifyListeners('counter', newState.counter), 0);
+          return newState;
+        });
         break;
 
       default:
-        console.warn('Unknown action type:', (action as any).type);
+        console.warn('Unknown action type:', (action as { type: string }).type);
     }
-  }
+  }, [notifyListeners]);
 
-  select<K extends keyof AppState>(key: K): StateSubscription<AppState[K]> {
+  const select = useCallback(<K extends keyof AppState>(key: K): StateSubscription<AppState[K]> => {
     return new WebStateSubscription(
-      () => this.state[key],
+      () => state[key],
       (callback: StateListener<AppState[K]>) => {
-        const listeners = this.listeners.get(key);
+        const listeners = listenersRef.current.get(key);
         if (listeners) {
           listeners.add(callback);
           return () => listeners.delete(callback);
@@ -65,16 +82,15 @@ export class WebBackend implements BackendAPI {
         return () => {}; // No-op unsubscribe
       }
     );
-  }
+  }, [state]);
 
-  async getState(): Promise<AppState> {
-    return { ...this.state };
-  }
+  const getState = useCallback(async (): Promise<AppState> => {
+    return { ...state };
+  }, [state]);
 
-  private notifyListeners<K extends keyof AppState>(key: K, value: AppState[K]): void {
-    const listeners = this.listeners.get(key);
-    if (listeners) {
-      listeners.forEach(listener => listener(value));
-    }
-  }
+  return {
+    dispatch,
+    select,
+    getState
+  };
 } 

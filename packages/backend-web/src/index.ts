@@ -1,1 +1,2 @@
-export * from './WebBackend'; 
+export * from './WebBackend';
+export * from './WebBackendProvider'; 
