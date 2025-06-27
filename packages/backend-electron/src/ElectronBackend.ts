@@ -31,20 +31,19 @@ export class ElectronBackend extends EventEmitter {
     // Handle subscription setup
     ipcMain.handle('backend:subscribe', async (event, key: keyof AppState) => {
       const webContents = event.sender;
-      const keyStr = String(key);
       
       const listener = (value: any) => {
-        webContents.send(`backend:state-update:${keyStr}`, value);
+        webContents.send(`backend:state-update:${key}`, value);
       };
 
-      this.on(`state-change:${keyStr}`, listener);
+      this.on(`state-change:${key}`, listener);
 
       // Return unsubscribe function identifier
-      const unsubscribeId = `${keyStr}-${Date.now()}-${Math.random()}`;
+      const unsubscribeId = `${key}-${Date.now()}-${Math.random()}`;
       
       // Store unsubscribe handler
       ipcMain.handleOnce(`backend:unsubscribe:${unsubscribeId}`, () => {
-        this.off(`state-change:${keyStr}`, listener);
+        this.off(`state-change:${key}`, listener);
       });
 
       return unsubscribeId;

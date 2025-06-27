@@ -1,4 +1,4 @@
-export interface AppState {
+export interface AppState extends Record<string, any> {
   counter: number;
 }
 

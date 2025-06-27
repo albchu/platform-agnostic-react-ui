@@ -29,8 +29,8 @@ export function useWebBackend(): BackendAPI {
   // Initialize listeners on first render
   useEffect(() => {
     Object.keys(state).forEach(key => {
-      if (!listenersRef.current.has(key as keyof AppState)) {
-        listenersRef.current.set(key as keyof AppState, new Set());
+      if (!listenersRef.current.has(key)) {
+        listenersRef.current.set(key, new Set());
       }
     });
   }, [state]);

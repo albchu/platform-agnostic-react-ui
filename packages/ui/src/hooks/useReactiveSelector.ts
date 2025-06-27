@@ -25,7 +25,7 @@ export function useReactiveSelector<K extends keyof AppState>(
     // Return appropriate default based on key
     if (key === 'counter') return 0 as AppState[K];
     // For other keys, we need to handle them appropriately
-    throw new Error(`No default value defined for key: ${String(key)}`);
+    throw new Error(`No default value defined for key: ${key}`);
   }
 
   return value;

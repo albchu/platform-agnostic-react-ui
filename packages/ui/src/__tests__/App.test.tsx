@@ -11,7 +11,7 @@ class MockBackend implements BackendAPI {
 
   constructor() {
     Object.keys(this.state).forEach(key => {
-      this.listeners.set(key as keyof AppState, new Set());
+      this.listeners.set(key, new Set());
     });
   }
 
