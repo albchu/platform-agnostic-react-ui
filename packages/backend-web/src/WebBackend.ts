@@ -1,5 +1,5 @@
 import { useCallback, useRef, useState, useEffect } from 'react';
-import { AppState, Action, BackendAPI, StateSubscription } from '@workspace/shared';
+import type { AppState, Action, BackendAPI, StateSubscription } from '@workspace/shared';
 
 type StateListener<T> = (value: T) => void;
 

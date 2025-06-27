@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer } from 'electron';
-import { AppState, Action, BackendAPI, StateSubscription } from '@workspace/shared';
+import type { AppState, Action, BackendAPI, StateSubscription } from '@workspace/shared';
 
 class ElectronStateSubscription<T> implements StateSubscription<T> {
   private unsubscribeId: string | null = null;
@@ -14,17 +14,19 @@ class ElectronStateSubscription<T> implements StateSubscription<T> {
   }
 
   subscribe(callback: (value: T) => void): () => void {
+    const keyStr = String(this.key);
+    
     // Set up IPC subscription
     ipcRenderer.invoke('backend:subscribe', this.key).then((unsubscribeId: string) => {
       this.unsubscribeId = unsubscribeId;
       
       // Listen for state updates
       const listener = (_: any, value: T) => callback(value);
-      ipcRenderer.on(`backend:state-update:${this.key}`, listener);
+      ipcRenderer.on(`backend:state-update:${keyStr}`, listener);
       
       // Store cleanup function
       this.cleanup = () => {
-        ipcRenderer.off(`backend:state-update:${this.key}`, listener);
+        ipcRenderer.off(`backend:state-update:${keyStr}`, listener);
         if (this.unsubscribeId) {
           ipcRenderer.invoke(`backend:unsubscribe:${this.unsubscribeId}`);
         }

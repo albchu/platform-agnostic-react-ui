@@ -1,6 +1,6 @@
 import { useContext } from 'react';
 import { BackendContext } from '../AppProvider';
-import { BackendAPI } from '@workspace/shared';
+import type { BackendAPI } from '@workspace/shared';
 
 export function useBackend(): BackendAPI {
   const backend = useContext(BackendContext);

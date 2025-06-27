@@ -1,7 +1,8 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { AppProvider, App } from '../index';
-import { BackendAPI, Action, AppState, StateSubscription } from '@workspace/shared';
+import { AppProvider } from '../AppProvider';
+import { App } from '../App';
+import type { BackendAPI, StateSubscription, Action, AppState } from '@workspace/shared';
 
 // Mock backend for testing
 class MockBackend implements BackendAPI {

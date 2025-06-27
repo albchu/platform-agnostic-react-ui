@@ -1,6 +1,6 @@
 import { EventEmitter } from 'events';
 import { ipcMain } from 'electron';
-import { AppState, Action } from '@workspace/shared';
+import type { AppState, Action } from '@workspace/shared';
 
 export class ElectronBackend extends EventEmitter {
   private state: AppState = {
@@ -31,19 +31,20 @@ export class ElectronBackend extends EventEmitter {
     // Handle subscription setup
     ipcMain.handle('backend:subscribe', async (event, key: keyof AppState) => {
       const webContents = event.sender;
+      const keyStr = String(key);
       
       const listener = (value: any) => {
-        webContents.send(`backend:state-update:${key}`, value);
+        webContents.send(`backend:state-update:${keyStr}`, value);
       };
 
-      this.on(`state-change:${key}`, listener);
+      this.on(`state-change:${keyStr}`, listener);
 
       // Return unsubscribe function identifier
-      const unsubscribeId = `${key}-${Date.now()}-${Math.random()}`;
+      const unsubscribeId = `${keyStr}-${Date.now()}-${Math.random()}`;
       
       // Store unsubscribe handler
       ipcMain.handleOnce(`backend:unsubscribe:${unsubscribeId}`, () => {
-        this.off(`state-change:${key}`, listener);
+        this.off(`state-change:${keyStr}`, listener);
       });
 
       return unsubscribeId;
@@ -68,7 +69,7 @@ export class ElectronBackend extends EventEmitter {
         break;
 
       default:
-        console.warn('Unknown action type:', (action as any).type);
+        console.warn('Unknown action type:', (action as { type: string }).type);
     }
   }
 

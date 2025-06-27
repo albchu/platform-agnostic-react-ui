@@ -1,2 +1,2 @@
 // Import the preload script from the backend-electron package
-import '@workspace/backend-electron/dist/preload'; 
+import '@workspace/backend-electron'; 

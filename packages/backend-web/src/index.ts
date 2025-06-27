@@ -1,2 +1,2 @@
-export * from './WebBackend';
-export * from './WebBackendProvider'; 
+export { useWebBackend } from './WebBackend';
+export { WebBackendProvider, useWebBackendContext } from './WebBackendProvider'; 

@@ -38,6 +38,9 @@ importers:
       '@workspace/backend-electron':
         specifier: workspace:*
         version: link:../../packages/backend-electron
+      '@workspace/shared':
+        specifier: workspace:*
+        version: link:../../packages/shared
       '@workspace/ui':
         specifier: workspace:*
         version: link:../../packages/ui

@@ -1,5 +1,5 @@
-import React, { createContext, ReactNode } from 'react';
-import { BackendAPI } from '@workspace/shared';
+import { createContext, ReactNode } from 'react';
+import type { BackendAPI } from '@workspace/shared';
 
 interface AppProviderProps {
   backend: BackendAPI;

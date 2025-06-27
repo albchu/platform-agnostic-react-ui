@@ -1,11 +1,12 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { AppProvider, App } from '@workspace/ui';
+import type { BackendAPI } from '@workspace/shared';
 
 // Type declaration for the API exposed by preload
 declare global {
   interface Window {
-    api: import('@workspace/shared').BackendAPI;
+    api: BackendAPI;
   }
 }
 
