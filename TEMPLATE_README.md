@@ -74,7 +74,36 @@ Edit these files manually:
 }
 ```
 
-### 4. **Install Dependencies**
+### 4. **Quick Setup with Customization Script (Recommended)**
+
+For the easiest setup, use the interactive customization script:
+
+```bash
+# Run the interactive customization script
+node customize-template.js
+```
+
+This script will:
+- ✅ **Prompt you for project details** (name, description, author, etc.)
+- ✅ **Automatically update all package.json files**
+- ✅ **Configure Electron app settings**
+- ✅ **Update project metadata** throughout the codebase
+- ✅ **Provide clear next steps**
+
+**After running the script:**
+```bash
+# Install dependencies
+pnpm install
+
+# Verify everything works
+pnpm dev
+```
+
+### 4b. **Manual Setup (Alternative)**
+
+If you prefer manual customization, skip the script and follow the manual steps below.
+
+### 5. **Install Dependencies**
 
 ```bash
 # Install all dependencies
@@ -84,7 +113,7 @@ pnpm install
 pnpm dev
 ```
 
-### 5. **Choose Your Platform(s)**
+### 6. **Choose Your Platform(s)**
 
 This template supports both Electron and Web. If you only need one:
 
@@ -104,7 +133,7 @@ rm -rf apps/web-app packages/backend-web
 # Update root package.json scripts (remove web-related commands)
 ```
 
-### 6. **Customize Your App Logic**
+### 7. **Customize Your App Logic**
 
 The template includes a simple counter example. Replace it with your app logic:
 
@@ -146,7 +175,10 @@ Your app uses a **backend-managed state architecture**:
 
 Once you've customized your project, you can:
 
-1. **Delete this file** (`TEMPLATE_README.md`)
+1. **Delete these template files**:
+   - `TEMPLATE_README.md` (this file)
+   - `customize-template.js` (customization script)
+   - `.github/TEMPLATE_SETUP.md` (template maintenance guide)
 2. **Rename `README.md`** to `ORIGINAL_README.md` (for reference)
 3. **Create your own `README.md`** with your project-specific information
 

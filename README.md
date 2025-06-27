@@ -48,6 +48,16 @@ This project demonstrates a **pluggable backend architecture** where:
 
 ## 🚀 Quick Start
 
+### Using as Template
+
+This repository is configured as a **GitHub Template Repository**. To create a new project:
+
+1. **Click "Use this template"** → "Create a new repository"
+2. **Clone your new repository**
+3. **Run the customization script**: `node customize-template.js`
+4. **Install dependencies**: `pnpm install`
+5. **Start developing**: `pnpm dev`
+
 ### Development
 
 ```bash
