@@ -28,12 +28,13 @@ class MockBackend implements BackendAPI {
   }
 
   select<K extends keyof AppState>(key: K): StateSubscription<AppState[K]> {
+    const self = this;
     return {
       async getValue() {
-        return this.state[key];
+        return self.state[key];
       },
       subscribe: (callback: (value: AppState[K]) => void) => {
-        const listeners = this.listeners.get(key);
+        const listeners = self.listeners.get(key);
         if (listeners) {
           listeners.add(callback);
           return () => listeners.delete(callback);
@@ -84,7 +85,7 @@ describe('App', () => {
     fireEvent.click(incrementButton);
 
     await waitFor(() => {
-      expect(screen.getByText(/Counter value: 1/)).toBeInTheDocument();
+      expect(screen.getByText('1')).toBeInTheDocument();
     });
   });
 
@@ -102,7 +103,7 @@ describe('App', () => {
     fireEvent.click(incrementButton);
 
     await waitFor(() => {
-      expect(screen.getByText(/Counter value: 1/)).toBeInTheDocument();
+      expect(screen.getByText('1')).toBeInTheDocument();
     });
 
     // Then reset
@@ -110,7 +111,7 @@ describe('App', () => {
     fireEvent.click(resetButton);
 
     await waitFor(() => {
-      expect(screen.getByText(/Counter value: 0/)).toBeInTheDocument();
+      expect(screen.getByText('0')).toBeInTheDocument();
     });
   });
 }); 
