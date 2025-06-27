@@ -1,3 +1,2 @@
 export { ElectronBackend } from './ElectronBackend';
-// Note: preload script should be imported as a side-effect, not exported
-import './preload'; 
+// Note: preload script should be imported separately, not from the main index 

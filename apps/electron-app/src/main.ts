@@ -18,10 +18,10 @@ const createWindow = (): void => {
 
   // Load the renderer
   if (process.env.NODE_ENV === 'development') {
-    mainWindow.loadFile(join(__dirname, 'renderer', 'index.html'));
+    mainWindow.loadFile(join(__dirname, 'renderer', 'renderer.html'));
     mainWindow.webContents.openDevTools();
   } else {
-    mainWindow.loadFile(join(__dirname, 'renderer', 'index.html'));
+    mainWindow.loadFile(join(__dirname, 'renderer', 'renderer.html'));
   }
 };
 
