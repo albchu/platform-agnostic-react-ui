@@ -54,11 +54,14 @@ This project demonstrates a **pluggable backend architecture** where:
 # Install dependencies
 pnpm install
 
-# Start Electron app
-pnpm --filter electron-app dev
+# Start Electron app (default)
+pnpm dev
+
+# Or explicitly start Electron app
+pnpm dev:electron
 
 # Start Web app  
-pnpm --filter web-app dev
+pnpm dev:web
 
 # Run all tests
 pnpm test

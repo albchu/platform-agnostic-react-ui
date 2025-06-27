@@ -50,7 +50,7 @@ The React UI is **purely declarative and view-focused**:
 ```ts
 // packages/shared/api.ts
 
-export interface AppState {
+export interface AppState extends Record<string, any> {
   counter: number;
 }
 
@@ -98,6 +98,7 @@ A hook that:
 
 * Subscribes to a specific key in `AppState`
 * Re-renders the component on value change
+* Provides default values while loading
 
 ### `App.tsx` Example
 
@@ -187,8 +188,8 @@ pnpm test
 | ---------------- | -------------------------------- |
 | Install all deps | `pnpm install`                   |
 | Build all        | `pnpm build`                     |
-| Start Electron   | `pnpm --filter electron-app dev` |
-| Start Web        | `pnpm --filter web-app dev`      |
+| Start Electron   | `pnpm dev` or `pnpm dev:electron` |
+| Start Web        | `pnpm dev:web`                   |
 | Test All         | `pnpm test`                      |
 | Lint All         | `pnpm lint`                      |
 | Type Check       | `pnpm type-check`                |
@@ -201,25 +202,21 @@ pnpm test
 | Build Electron (Prod)   | `pnpm build:electron`                   | `apps/electron-app/dist/` (executable)   |
 | Build All (Production)  | `pnpm build:prod`                       | Both web and electron production builds  |
 | Package Electron        | `pnpm package:electron`                 | Platform-specific installers             |
-| Release Electron        | `pnpm release:electron`                 | Signed, notarized, and published builds  |
+| Release Electron        | `pnpm release:electron`                 | Electron builds with publishing          |
 
-### Build Optimization Features
+### Build Features
 
 #### Web App Production Build
 * **Tree shaking** and **dead code elimination**
-* **Code splitting** with dynamic imports
-* **Asset optimization** (images, fonts, CSS)
-* **Bundle size analysis** and optimization
-* **Service worker** for offline capabilities (optional)
+* **Code splitting** with manual chunks for vendor and UI packages
+* **Asset optimization** with Vite's built-in optimizations
 * **Environment-specific configurations**
 
 #### Electron Production Build
-* **Code signing** for Windows, macOS, and Linux
-* **Auto-updater** integration
-* **Platform-specific optimizations**
-* **Installer generation** (NSIS, DMG, AppImage, etc.)
-* **Notarization** for macOS
-* **Multi-platform builds** from single command
+* **TypeScript compilation** for main process
+* **Vite bundling** for renderer process
+* **Basic packaging** with electron-builder
+* **Multi-platform builds** (macOS, Windows, Linux)
 
 ---
 
@@ -232,7 +229,7 @@ This project's **multi-target architecture** (Electron + Web) with shared packag
 | Feature | PNPM Only | PNPM + Turborepo |
 |---------|-----------|------------------|
 | **Incremental Builds** | Manual script coordination | Automatic dependency-aware builds |
-| **Caching** | No built-in caching | Intelligent local + remote caching |
+| **Caching** | No built-in caching | Intelligent local caching |
 | **Parallelization** | Limited to `--parallel` flag | Smart parallel execution with dependency graphs |
 | **Change Detection** | Rebuilds everything | Only rebuilds affected packages |
 
@@ -274,19 +271,13 @@ shared ──┬─→ ui ──┬─→ web-app
 2. **Level 2**: Build `ui`, `backend-web`, `backend-electron` in parallel
 3. **Level 3**: Build `web-app` and `electron-app` in parallel
 
-### 💾 Advanced Caching Strategy
+### 💾 Local Caching Strategy
 
-#### Local Caching
 - **Input hashing**: Caches based on source files, dependencies, and environment
 - **Output restoration**: Instantly restores previous build artifacts
 - **Cache invalidation**: Smart cache busting when inputs change
 
-#### Remote Caching (Future)
-- **Team collaboration**: Share build cache across development team
-- **CI/CD optimization**: Dramatically faster builds in continuous integration
-- **Distributed builds**: Scale builds across multiple machines
-
-### 🔄 Complex Task Orchestration
+### 🔄 Task Orchestration
 
 The monorepo requires sophisticated task coordination:
 
@@ -351,8 +342,6 @@ turbo run build:prod --filter=electron-app # Electron production only
 turbo run build:prod                       # Both targets optimally
 ```
 
-
-
 ---
 
 ## ⚙️ Workspace Configuration
@@ -376,7 +365,9 @@ packages:
     "build:electron": "turbo run build:prod --filter=electron-app",
     "package:electron": "turbo run package --filter=electron-app",
     "release:electron": "turbo run release --filter=electron-app",
-    "dev": "turbo run dev",
+    "dev": "turbo run dev --filter=electron-app",
+    "dev:electron": "turbo run dev --filter=electron-app",
+    "dev:web": "turbo run dev --filter=web-app",
     "test": "turbo run test",
     "lint": "turbo run lint",
     "type-check": "turbo run type-check",
@@ -385,7 +376,7 @@ packages:
 }
 ```
 
-### Enhanced `turbo.json`
+### `turbo.json` Configuration
 
 ```json
 {
@@ -466,12 +457,40 @@ export default defineConfig(({ mode }) => ({
 }));
 ```
 
-### Electron Build Configuration (`apps/electron-app/electron-builder.json`)
+### Electron Build Configuration
+
+#### Vite Config (`apps/electron-app/vite.config.ts`)
+
+```ts
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+import { resolve } from 'path';
+
+export default defineConfig({
+  plugins: [react()],
+  base: './',
+  build: {
+    outDir: 'dist/renderer',
+    rollupOptions: {
+      input: {
+        main: resolve(__dirname, 'renderer.html')
+      }
+    }
+  },
+  resolve: {
+    alias: {
+      '@': resolve(__dirname, 'src')
+    }
+  }
+});
+```
+
+#### Electron Builder Config (`apps/electron-app/electron-builder.json`)
 
 ```json
 {
-  "appId": "com.yourcompany.yourapp",
-  "productName": "Your App Name",
+  "appId": "com.yourcompany.platform-agnostic-react-ui",
+  "productName": "Platform-Agnostic React UI",
   "directories": {
     "output": "release",
     "buildResources": "build-resources"
@@ -486,17 +505,9 @@ export default defineConfig(({ mode }) => ({
   },
   "mac": {
     "category": "public.app-category.productivity",
-    "hardenedRuntime": true,
-    "gatekeeperAssess": false,
-    "entitlements": "build-resources/entitlements.mac.plist",
-    "entitlementsInherit": "build-resources/entitlements.mac.plist",
     "target": [
       {
         "target": "dmg",
-        "arch": ["x64", "arm64"]
-      },
-      {
-        "target": "zip",
         "arch": ["x64", "arm64"]
       }
     ]
@@ -505,35 +516,19 @@ export default defineConfig(({ mode }) => ({
     "target": [
       {
         "target": "nsis",
-        "arch": ["x64", "ia32"]
-      },
-      {
-        "target": "portable",
-        "arch": ["x64", "ia32"]
+        "arch": ["x64"]
       }
-    ],
-    "certificateFile": "path/to/certificate.p12",
-    "certificatePassword": "${env.WIN_CSC_KEY_PASSWORD}"
+    ]
   },
   "linux": {
     "target": [
       {
         "target": "AppImage",
         "arch": ["x64"]
-      },
-      {
-        "target": "deb",
-        "arch": ["x64"]
       }
     ],
     "category": "Office"
-  },
-  "publish": {
-    "provider": "github",
-    "owner": "your-github-username",
-    "repo": "your-repo-name"
-  },
-  "afterSign": "scripts/notarize.js"
+  }
 }
 ```
 
@@ -543,5 +538,4 @@ export default defineConfig(({ mode }) => ({
 * **TypeScript strict mode** enabled
 * **ESLint** with React and accessibility rules
 * **Prettier** for consistent formatting
-* **Unit tests** with minimum coverage thresholds
-* **Bundle size limits** to prevent bloat
+* **Unit tests** with Vitest and React Testing Library
