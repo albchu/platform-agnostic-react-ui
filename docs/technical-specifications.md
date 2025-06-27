@@ -176,10 +176,12 @@ pnpm test
 
 * **PNPM** for workspace management
 * **Turborepo** for build/test orchestration and caching
-* **Vite** for frontend bundling
-* **Electron Builder** for app packaging (not yet configured, optional)
+* **Vite** for frontend bundling (development and production)
+* **Electron Builder** for production app packaging and distribution
+* **TypeScript** for type checking and compilation
+* **ESLint + Prettier** for code quality and formatting
 
-### Key Commands
+### Development Commands
 
 | Task             | Command                          |
 | ---------------- | -------------------------------- |
@@ -188,6 +190,36 @@ pnpm test
 | Start Electron   | `pnpm --filter electron-app dev` |
 | Start Web        | `pnpm --filter web-app dev`      |
 | Test All         | `pnpm test`                      |
+| Lint All         | `pnpm lint`                      |
+| Type Check       | `pnpm type-check`                |
+
+### Production Build Commands
+
+| Task                    | Command                                  | Output                                    |
+| ----------------------- | ---------------------------------------- | ----------------------------------------- |
+| Build Web (Production)  | `pnpm build:web`                        | `apps/web-app/dist/` (static files)      |
+| Build Electron (Prod)   | `pnpm build:electron`                   | `apps/electron-app/dist/` (executable)   |
+| Build All (Production)  | `pnpm build:prod`                       | Both web and electron production builds  |
+| Package Electron        | `pnpm package:electron`                 | Platform-specific installers             |
+| Release Electron        | `pnpm release:electron`                 | Signed, notarized, and published builds  |
+
+### Build Optimization Features
+
+#### Web App Production Build
+* **Tree shaking** and **dead code elimination**
+* **Code splitting** with dynamic imports
+* **Asset optimization** (images, fonts, CSS)
+* **Bundle size analysis** and optimization
+* **Service worker** for offline capabilities (optional)
+* **Environment-specific configurations**
+
+#### Electron Production Build
+* **Code signing** for Windows, macOS, and Linux
+* **Auto-updater** integration
+* **Platform-specific optimizations**
+* **Installer generation** (NSIS, DMG, AppImage, etc.)
+* **Notarization** for macOS
+* **Multi-platform builds** from single command
 
 ---
 
@@ -201,7 +233,27 @@ packages:
   - packages/*
 ```
 
-### `turbo.json`
+### Root `package.json` Scripts
+
+```json
+{
+  "scripts": {
+    "build": "turbo run build",
+    "build:prod": "turbo run build:prod",
+    "build:web": "turbo run build --filter=web-app",
+    "build:electron": "turbo run build:prod --filter=electron-app",
+    "package:electron": "turbo run package --filter=electron-app",
+    "release:electron": "turbo run release --filter=electron-app",
+    "dev": "turbo run dev",
+    "test": "turbo run test",
+    "lint": "turbo run lint",
+    "type-check": "turbo run type-check",
+    "clean": "turbo run clean && rm -rf node_modules/.cache"
+  }
+}
+```
+
+### Enhanced `turbo.json`
 
 ```json
 {
@@ -209,47 +261,155 @@ packages:
   "pipeline": {
     "build": {
       "dependsOn": ["^build"],
-      "outputs": ["dist/**", "build/**"]
+      "outputs": ["dist/**", "build/**", "lib/**"]
     },
-    "test": {
-      "outputs": []
+    "build:prod": {
+      "dependsOn": ["^build", "type-check", "lint"],
+      "outputs": ["dist/**", "build/**", "release/**"],
+      "env": ["NODE_ENV", "VITE_*", "ELECTRON_*"]
+    },
+    "package": {
+      "dependsOn": ["build:prod"],
+      "outputs": ["release/**", "dist/**"]
+    },
+    "release": {
+      "dependsOn": ["package"],
+      "outputs": ["release/**"],
+      "env": ["GH_TOKEN", "APPLE_*", "CSC_*", "WIN_CSC_*"]
     },
     "dev": {
+      "cache": false,
+      "persistent": true
+    },
+    "test": {
+      "dependsOn": ["^build"],
+      "outputs": ["coverage/**"]
+    },
+    "lint": {
+      "outputs": []
+    },
+    "type-check": {
+      "dependsOn": ["^build"],
+      "outputs": []
+    },
+    "clean": {
       "cache": false
     }
   }
 }
 ```
 
----
+### Web App Build Configuration (`apps/web-app/vite.config.ts`)
 
-## 🚀 Deployment Notes
+```ts
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+import { resolve } from 'path';
 
-* **Web App**: build `web-app` with Vite → deploy static output
-* **Electron App**: package via Electron Builder (optional task)
-* **UI** remains completely **runtime-agnostic**
+export default defineConfig(({ mode }) => ({
+  plugins: [react()],
+  base: mode === 'production' ? './' : '/',
+  build: {
+    outDir: 'dist',
+    sourcemap: mode === 'development',
+    minify: mode === 'production' ? 'esbuild' : false,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom'],
+          ui: ['@workspace/ui']
+        }
+      }
+    },
+    target: 'es2020'
+  },
+  resolve: {
+    alias: {
+      '@': resolve(__dirname, 'src')
+    }
+  },
+  define: {
+    __APP_VERSION__: JSON.stringify(process.env.npm_package_version)
+  }
+}));
+```
 
----
+### Electron Build Configuration (`apps/electron-app/electron-builder.json`)
 
-## ✅ Agent Deliverables
+```json
+{
+  "appId": "com.yourcompany.yourapp",
+  "productName": "Your App Name",
+  "directories": {
+    "output": "release",
+    "buildResources": "build-resources"
+  },
+  "files": [
+    "dist/**/*",
+    "node_modules/**/*",
+    "package.json"
+  ],
+  "extraMetadata": {
+    "main": "dist/main.js"
+  },
+  "mac": {
+    "category": "public.app-category.productivity",
+    "hardenedRuntime": true,
+    "gatekeeperAssess": false,
+    "entitlements": "build-resources/entitlements.mac.plist",
+    "entitlementsInherit": "build-resources/entitlements.mac.plist",
+    "target": [
+      {
+        "target": "dmg",
+        "arch": ["x64", "arm64"]
+      },
+      {
+        "target": "zip",
+        "arch": ["x64", "arm64"]
+      }
+    ]
+  },
+  "win": {
+    "target": [
+      {
+        "target": "nsis",
+        "arch": ["x64", "ia32"]
+      },
+      {
+        "target": "portable",
+        "arch": ["x64", "ia32"]
+      }
+    ],
+    "certificateFile": "path/to/certificate.p12",
+    "certificatePassword": "${env.WIN_CSC_KEY_PASSWORD}"
+  },
+  "linux": {
+    "target": [
+      {
+        "target": "AppImage",
+        "arch": ["x64"]
+      },
+      {
+        "target": "deb",
+        "arch": ["x64"]
+      }
+    ],
+    "category": "Office"
+  },
+  "publish": {
+    "provider": "github",
+    "owner": "your-github-username",
+    "repo": "your-repo-name"
+  },
+  "afterSign": "scripts/notarize.js"
+}
+```
 
-* [ ] Clone repo or use scaffold
-* [ ] Implement all package stubs
-* [ ] Confirm API contracts match
-* [ ] Add tests and verify output
-* [ ] Document runtime instructions and assumptions
+## 🔧 Development Workflow
 
----
-
-## 🔮 Future Extensions (Optional)
-
-| Feature                            | Benefit                             |
-| ---------------------------------- | ----------------------------------- |
-| WebSocket-based backend (web)      | Real-time state sync                |
-| File or DB persistence (Electron)  | Save app state between runs         |
-| More actions (addItem, removeItem) | Exercise dispatch patterns          |
-| Time travel/debug logging          | Redux DevTools-like backend tracing |
-
----
-
-Let me know if you'd like this documentation also saved into a downloadable Markdown file (`TECHNICAL_SPEC.md`) or embedded inside the zip project for handoff.
+### Quality Gates
+* **TypeScript strict mode** enabled
+* **ESLint** with React and accessibility rules
+* **Prettier** for consistent formatting
+* **Unit tests** with minimum coverage thresholds
+* **Bundle size limits** to prevent bloat
